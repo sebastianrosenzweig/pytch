@@ -199,7 +199,7 @@ def MakeGaugeWidget(gl=False):
         base = qw.QWidget
     class _GaugeWidget(base, PlotBase):
         def __init__(self, *args, **kwargs):
-            super(_GaugeWidget, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
             self.color = qg.QColor(0, 100, 100)
             self._val = 0

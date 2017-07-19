@@ -299,12 +299,12 @@ class MenuWidget(QFrame):
         return qc.QSize(200, 200)
 
 
-class ChannelViews(Axis):
+class ChannelViews(GLAxis):
     '''
     Display all ChannelView objects in a QVBoxLayout
     '''
     def __init__(self, channel_views):
-        Axis.__init__(self)
+        GLAxis.__init__(self)
         self.channel_views = channel_views
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
