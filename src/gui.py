@@ -299,14 +299,12 @@ class MenuWidget(QFrame):
         return qc.QSize(200, 200)
 
 
-class ChannelViews(GLAxis):
-#class ChannelViews(QWidget):
+class ChannelViews(Axis):
     '''
     Display all ChannelView objects in a QVBoxLayout
     '''
     def __init__(self, channel_views):
-        #QWidget.__init__(self)
-        GLAxis.__init__(self)
+        Axis.__init__(self)
         self.channel_views = channel_views
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
@@ -376,9 +374,9 @@ class SpectrogramWidget(Axis):
             logger.debug(e)
             return
 
-class SpectrumWidget(GLAxis):
+class SpectrumWidget(Axis):
     def __init__(self, *args, **kwargs):
-        GLAxis.__init__(self, *args, **kwargs)
+        Axis.__init__(self, *args, **kwargs)
         self.set_xlim(0, 2000)
         self.set_ylim(0, 20)
         self.left = 0.
@@ -593,7 +591,7 @@ class OverView(QWidget):
 
         layout = QGridLayout()
         self.setLayout(layout)
-        self.figure = GLAxis()
+        self.figure = Axis()
         self.figure.xlabels = False
         self.figure.set_ylim(-1500., 1500)
         self.figure.set_grids(100.)
