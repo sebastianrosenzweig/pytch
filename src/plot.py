@@ -40,7 +40,6 @@ def get_colortable(log=False):
 
 _grey_scale = [qg.qRgb(val, val, val) for val in a[::-1]]
 #_grey_scale = get_colortable(log=True)
-PlotWidgetBase = qw.QWidget
 
 class InterpolatedColormap(object):
     ''' Continuously interpolating colormap '''
@@ -200,7 +199,7 @@ def MakeGaugeWidget(gl=False):
         base = qw.QWidget
     class _GaugeWidget(base, PlotBase):
         def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+            super(_GaugeWidget, self).__init__(*args, **kwargs)
 
             self.color = qg.QColor(0, 100, 100)
             self._val = 0
@@ -237,10 +236,7 @@ def MakeGaugeWidget(gl=False):
 
         @qc.pyqtSlot(qg.QPaintEvent)
         def paintEvent(self, e):
-        #def do_draw(self, painter):
             ''' This is executed when self.repaint() is called'''
-            #painter.save()
-            #painter = self.getPain
             painter = qg.QPainter(self)
             self.side = min(self.width(), self.height())/1.05
             self.halfside = self.side/2.
@@ -498,53 +494,6 @@ class Polyline():
         painter.restore()
 
 
-class PColormesh(PlotWidgetBase):
-    '''
-    2D array. Currently, opengl is not supported.'''
-    def __init__(self, img, x, y, *args, **kwargs):
-        super(PlotWidgetBase, self).__init__(*args, **kwargs)
-        self.x = x
-        self.y = y
-        self.vmax = 13000
-        self.vmin = None
-        self.rect = None
-        self.img = img
-        buff = self.img.bits()
-        nx = len(x)
-        ny = len(y)
-        buff.setsize(nx*ny*2**8)
-        self.img_data = num.ndarray(shape=(nx, ny),
-                                    dtype=num.uint8,
-                                    buffer=buff)
-
-    def draw(self, painter, xproj, yproj, rect=None):
-        painter.drawImage(rect, self.img)
-
-    @classmethod
-    def from_numpy_array(cls, x=None, y=None, z=None):
-        '''
-        :param a: RGB array
-        '''
-        if not z.dtype == num.uint8:
-            z = num.asarray(z, dtype=num.uint8)
-            z = num.ascontiguousarray(z)
-
-        img = qg.QImage(
-            z.data, z.shape[1], z.shape[0], qg.QImage.Format_Indexed8)
-
-        img.setColorTable(_grey_scale)
-        o = cls(img, x, y)
-        o.set_data(z)
-        return o
-
-    def prescale(self, d):
-        return num.clip(num.divide(d, self.vmax), 0, 255)
-
-    def set_data(self, d):
-
-        self.img_data[:, :] = memoryview(self.prescale(d))
-
-
 def MakeAxis(gl=True):
     if gl:
         base = GLWidget
@@ -559,6 +508,7 @@ def MakeAxis(gl=True):
 
             self.scroll_increment = 0
             self.track_start = None
+            self.scene_items = []
 
             self.ymin = None
             self.ymax = None
@@ -703,8 +653,7 @@ def MakeAxis(gl=True):
                 logger.info(e)
 
         def update_datalims(self, xvisible, yvisible):
-
-            if self.ymin is None:
+            if not self.ymin:
                 self._ymin = num.min(yvisible)
             else:
                 self._ymin = self.ymin
@@ -741,7 +690,6 @@ def MakeAxis(gl=True):
         def xrange_visible(self):
             return self.xproj.in_range
 
-        #def do_draw(self, painter):
         @qc.pyqtSlot(qg.QPaintEvent)
         def paintEvent(self, e):
             ''' this is executed e.g. when self.repaint() is called. Draws the
@@ -859,6 +807,63 @@ def MakeAxis(gl=True):
 Axis = MakeAxis(gl=False)
 GLAxis = MakeAxis(gl=True)
 GaugeWidget = MakeGaugeWidget(gl=True)
+
+
+class PColormesh(Axis):
+    '''
+    2D array. Currently, opengl is not supported.'''
+    def __init__(self, img, x, y, *args, **kwargs):
+        super(PColormesh, self).__init__(*args, **kwargs)
+        self.x = x
+        self.y = y
+        self.vmax = 13000
+        self.vmin = None
+        self.rect = None
+        self.img = img
+        buff = self.img.bits()
+        nx = len(x)
+        ny = len(y)
+        buff.setsize(nx*ny*2**8)
+        self.img_data = num.ndarray(shape=(nx, ny),
+                                    dtype=num.uint8,
+                                    buffer=buff)
+
+    def draw(self, painter, xproj, yproj, rect=None):
+        painter.drawImage(rect, self.img)
+
+    @classmethod
+    def from_numpy_array(cls, x=None, y=None, z=None):
+        '''
+        :param a: RGB array
+        '''
+        if not z.dtype == num.uint8:
+            z = num.asarray(z, dtype=num.uint8)
+            z = num.ascontiguousarray(z)
+
+        img = qg.QImage(
+            z.data, z.shape[1], z.shape[0], qg.QImage.Format_Indexed8)
+
+        img.setColorTable(_grey_scale)
+        o = cls(img, x, y)
+        o.set_data(z)
+        return o
+
+    def prescale(self, d):
+        return num.clip(num.divide(d, self.vmax), 0, 255)
+
+    def set_data(self, *args):
+        '''
+        :param args: z(2d) or x, y, z(2d) as arrays
+        '''
+        if len(args) == 3:
+            x, y, z = args
+            self.update_datalims(x, y)
+        elif len(args) == 1:
+            z = args
+        else:
+            raise Exception("Invalid number of arguments to *set_data*")
+        self.img_data[:, :] = memoryview(self.prescale(z))
+
 
 class MikadoWidget(Axis):
     def __init__(self, *args, **kwargs):

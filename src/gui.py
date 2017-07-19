@@ -351,28 +351,34 @@ class ChannelViews(GLAxis):
 
 class SpectrogramWidget(Axis):
     def __init__(self, channel, *args, **kwargs):
-        Axis.__init__(self, *args, **kwargs)
+        super(SpectrogramWidget, self).__init__(*args, **kwargs)
+
         self.ny, self.nx = 300, 680
+        x = num.arange(self.nx)
+        y = num.arange(self.ny)
         self.channel = channel
         fake = num.ones((self.nx, self.ny))
-        self.image = self.colormesh(z=fake)
+        self.image = self.colormesh(x, y, z=fake)
 
     @qc.pyqtSlot()
     def update_spectrogram(self):
         c = self.channel
-        x = c.freqs[: self.ny]
-        y = c.xdata[-self.nx:]
-        d = c.fft.latest_frame_data(self.nx)
-        self.image.set_data(d[:, :self.ny])
-
-        # TODO: fix data limits
-        #self.update_datalims(x, y)
-        self.update()
-
+        try:
+            x = c.freqs[: self.ny]
+            y = c.xdata[-self.nx:]
+            d = c.fft.latest_frame_data(self.nx)
+            self.image.set_data(x, y, d[:, :self.ny])
+            self.image.set_xlim(min(x), max(x))
+            self.image.set_ylim(min(y), max(y))
+            self.image.update()
+            self.update()
+        except ValueError as e:
+            logger.debug(e)
+            return
 
 class SpectrumWidget(GLAxis):
     def __init__(self, *args, **kwargs):
-        Axis.__init__(self, *args, **kwargs)
+        GLAxis.__init__(self, *args, **kwargs)
         self.set_xlim(0, 2000)
         self.set_ylim(0, 20)
         self.left = 0.
@@ -587,7 +593,7 @@ class OverView(QWidget):
 
         layout = QGridLayout()
         self.setLayout(layout)
-        self.figure = Axis()
+        self.figure = GLAxis()
         self.figure.xlabels = False
         self.figure.set_ylim(-1500., 1500)
         self.figure.set_grids(100.)
@@ -1031,7 +1037,8 @@ class MainWidget(QWidget):
 class MainWindow(QMainWindow):
     ''' Top level Window. The entry point of the gui.'''
     def __init__(self, settings, *args, **kwargs):
-        super(QMainWindow, self).__init__(*args, **kwargs)
+        #super(QMainWindow, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.main_widget = MainWidget(settings, )
         self.main_widget.setFocusPolicy(qc.Qt.StrongFocus)
 

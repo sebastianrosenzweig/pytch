@@ -388,6 +388,7 @@ class PlotBase(object):
 
         return qg.QPen(qg.QColor(*_colors[color]),
                       line_width, _pen_styles[style])
+
     def set_ylim(self, ymin, ymax):
         ''' Set range of Gauge.'''
         self.ymin = ymin
@@ -427,15 +428,7 @@ class PlotBase(object):
             self.set_ylim(self._ymin-self.scroll_increment*n,
                           self._ymax-self.scroll_increment*n)
 
-
         self.update()
-
-    #@qc.pyqtSlot(qg.QPaintEvent)
-    #def paintEvent(self, e):
-    #    painter = qg.QPainter(self)
-
-    #    #self.do_draw(painter)
-    #    painter.end()
 
     @qc.pyqtSlot(qg.QKeyEvent)
     def keyPressEvent(self, key_event):
